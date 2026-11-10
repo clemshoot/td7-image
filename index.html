@@ -77,6 +77,19 @@
     arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
   >
 
+    <a-assets>
+      <video
+        id="vid"
+        src="assets/animation.mp4"
+        preload="auto"
+        loop
+        muted
+        playsinline
+        webkit-playsinline
+        crossorigin="anonymous"
+      ></video>
+    </a-assets>
+
     <!-- l'image qui sert de déclencheur : descripteurs assets/a.iset, a.fset, a.fset3 -->
     <a-nft
       id="marker"
@@ -87,18 +100,17 @@
       smoothTolerance=".01"
       smoothThreshold="5"
     >
-      <!-- la photo apparaît au-dessus de l'image, flotte, tourne, pulse et change de teinte -->
-      <!-- position = x y z à partir du coin bas-gauche de l'image ; width/height = taille -->
-      <a-image
-        src="assets/photo.jpg"
-        width="400"
-        height="300"
-        position="361 271 40"
-        animation__float="property: position; from: 361 271 40; to: 361 271 140; dir: alternate; dur: 1500; loop: true; easing: easeInOutSine"
-        animation__spin="property: rotation; from: 0 0 0; to: 0 0 360; dur: 8000; loop: true; easing: linear"
-        animation__pulse="property: scale; from: 1 1 1; to: 1.2 1.2 1.2; dir: alternate; dur: 1000; loop: true; easing: easeInOutSine"
-        animation__color="property: components.material.material.color; type: color; from: #ffffff; to: #ffd400; dir: alternate; dur: 1500; loop: true"
-      ></a-image>
+      <!-- le GIF (converti en vidéo) est posé à plat, centré sur l'image scannée -->
+      <!-- position/taille de départ ; elles sont recalculées avec la vraie taille de l'image dès qu'elle est chargée -->
+      <a-entity id="content" position="361.2 270.9 0">
+        <a-video
+          id="clip"
+          src="#vid"
+          width="361.2"
+          height="361.2"
+          position="0 0 3"
+        ></a-video>
+      </a-entity>
     </a-nft>
 
     <a-entity camera></a-entity>
@@ -151,13 +163,33 @@
       statusEl.textContent = "Pointe la caméra vers la photo";
     });
 
-    // l'image est reconnue / perdue
+    // taille réelle de l'image scannée (en mm) -> on centre et on ajuste la vidéo
+    var VIDEO_RATIO = 508 / 504; // largeur / hauteur de la vidéo
+    window.addEventListener('arjs-nft-init-data', function (e) {
+      var d = e.detail;                       // { dpi, width, height } (pixels)
+      var wMM = d.width / d.dpi * 25.4;       // largeur de l'image scannée en unités AR.js (mm)
+      var hMM = d.height / d.dpi * 25.4;
+      // la vidéo tient entièrement dans l'image (sans déformation)
+      var vw = wMM, vh = wMM / VIDEO_RATIO;
+      if (vh > hMM) { vh = hMM; vw = hMM * VIDEO_RATIO; }
+      document.getElementById('content').setAttribute('position', (wMM / 2) + ' ' + (hMM / 2) + ' 0');
+      var clip = document.getElementById('clip');
+      clip.setAttribute('width', vw);
+      clip.setAttribute('height', vh);
+      log('image : ' + Math.round(wMM) + ' x ' + Math.round(hMM) + ' mm (dpi ' + d.dpi + ')');
+    });
+
+    // l'image est reconnue / perdue : on lance / on met en pause la vidéo
+    var video = document.getElementById('vid');
     marker.addEventListener('markerFound', function () {
       if (loader) loader.style.display = 'none';
       statusEl.textContent = "Image détectée ✓";
+      var p = video.play();
+      if (p && p.catch) p.catch(function (err) { log('video: ' + err); });
     });
     marker.addEventListener('markerLost', function () {
       statusEl.textContent = "Pointe la caméra vers la photo";
+      video.pause();
     });
   </script>
 </body>
