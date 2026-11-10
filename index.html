@@ -41,12 +41,30 @@
     text-align: center;
     z-index: 10000;
   }
+  /* zone de diagnostic : messages d'erreur lisibles sur le téléphone */
+  #debug {
+    position: fixed;
+    top: 52px;
+    left: 0;
+    right: 0;
+    max-height: 40vh;
+    overflow: auto;
+    margin: 0;
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.65);
+    color: #7CFC7C;
+    font-family: monospace;
+    font-size: 11px;
+    white-space: pre-wrap;
+    z-index: 10000;
+  }
 </style>
 </head>
 
 <body style="margin: 0px; overflow: hidden;">
 
   <div id="status">Chargement… autorise la caméra</div>
+  <pre id="debug"></pre>
 
   <div class="arjs-loader">
     <div>Loading, please wait...</div>
@@ -87,23 +105,59 @@
   </a-scene>
 
   <script>
-    var status = document.getElementById('status');
+    var statusEl = document.getElementById('status');
+    var dbg = document.getElementById('debug');
+    function log(m) { dbg.textContent += m + "\n"; }
+
+    // chronomètre pendant le chargement
+    var t0 = Date.now(), loaded = false;
+    var timer = setInterval(function () {
+      if (loaded) { clearInterval(timer); return; }
+      statusEl.textContent = "Chargement… " + Math.round((Date.now() - t0) / 1000) + " s";
+    }, 1000);
+
+    // vérifie que GitHub Pages sert bien les 3 fichiers de la photo
+    ['iset', 'fset', 'fset3'].forEach(function (ext) {
+      fetch('assets/a.' + ext).then(function (r) {
+        return r.arrayBuffer().then(function (b) {
+          log('a.' + ext + ' : HTTP ' + r.status + ' (' + Math.round(b.byteLength / 1024) + ' Ko)');
+        });
+      }).catch(function (e) { log('a.' + ext + ' : ERREUR ' + e); });
+    });
+
+    // affiche les erreurs dans la zone de diagnostic
+    var _log = console.log, _err = console.error;
+    console.log = function () {
+      var m = Array.prototype.slice.call(arguments).join(' ');
+      if (/error|erreur|fail/i.test(m)) log('LOG: ' + m.slice(0, 200));
+      _log.apply(console, arguments);
+    };
+    console.error = function () {
+      log('ERR: ' + Array.prototype.slice.call(arguments).join(' ').slice(0, 200));
+      _err.apply(console, arguments);
+    };
+    window.addEventListener('error', function (e) { log('ERR: ' + e.message); });
+    window.addEventListener('unhandledrejection', function (e) {
+      log('PROMISE: ' + ((e.reason && e.reason.message) || e.reason));
+    });
     var loader = document.querySelector('.arjs-loader');
     var marker = document.getElementById('marker');
 
     // les descripteurs de l'image sont chargés
     window.addEventListener('arjs-nft-loaded', function () {
+      loaded = true;
+      log('arjs-nft-loaded OK après ' + Math.round((Date.now() - t0) / 1000) + ' s');
       if (loader) loader.style.display = 'none';
-      status.textContent = "Pointe la caméra vers la photo";
+      statusEl.textContent = "Pointe la caméra vers la photo";
     });
 
     // l'image est reconnue / perdue
     marker.addEventListener('markerFound', function () {
       if (loader) loader.style.display = 'none';
-      status.textContent = "Image détectée ✓";
+      statusEl.textContent = "Image détectée ✓";
     });
     marker.addEventListener('markerLost', function () {
-      status.textContent = "Pointe la caméra vers la photo";
+      statusEl.textContent = "Pointe la caméra vers la photo";
     });
   </script>
 </body>
