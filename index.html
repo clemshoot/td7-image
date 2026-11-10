@@ -108,7 +108,7 @@
           id="clip"
           src="#f0"
           width="361.2"
-          height="236"
+          height="356.8"
           position="0 1 0"
           rotation="-90 0 0"
           material="shader: flat; side: double"
@@ -167,7 +167,7 @@
     });
 
     // taille réelle de l'image scannée (en mm) -> on centre et on ajuste la vidéo
-    var VIDEO_RATIO = 508 / 332; // largeur / hauteur du GIF
+    var VIDEO_RATIO = 414 / 409; // largeur / hauteur du GIF
     window.addEventListener('arjs-nft-init-data', function (e) {
       var d = e.detail;                       // { dpi, width, height } (pixels)
       var wMM = d.width / d.dpi * 25.4;       // largeur de l'image scannée en unités AR.js (mm)
