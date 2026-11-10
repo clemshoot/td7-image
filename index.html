@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TD7 - AR.js image tracking</title>
+
+<!-- A-Frame puis AR.js (image tracking / NFT) -->
+<script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@1c2407b26c61958baa93967b5412487cd94b290b/dist/aframe-master.min.js"></script>
+<script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+
+<!-- style du loader -->
+<style>
+  .arjs-loader {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .arjs-loader div {
+    text-align: center;
+    font-size: 1.25em;
+    color: white;
+  }
+</style>
+</head>
+
+<body style="margin: 0px; overflow: hidden;">
+
+  <!-- loader affiché tant que les descripteurs d'image ne sont pas chargés -->
+  <div class="arjs-loader">
+    <div>Loading, please wait...</div>
+  </div>
+
+  <!-- scène A-Frame -->
+  <a-scene
+    vr-mode-ui="enabled: false;"
+    renderer="logarithmicDepthBuffer: true;"
+    embedded
+    arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
+  >
+
+    <!-- a-nft = l'ancre d'image tracking -->
+    <!-- url = chemin des descripteurs SANS extension (assets/a pour a.fset, a.fset3, a.iset) -->
+    <a-nft
+      type="nft"
+      url="assets/a"
+      smooth="true"
+      smoothCount="10"
+      smoothTolerance=".01"
+      smoothThreshold="5"
+    >
+      <!-- contenu affiché sur l'image : ton objet 3D -->
+      <!-- si l'objet est trop petit / trop grand, change scale ; si il est décalé, change position -->
+      <a-entity
+        gltf-model="assets/fichier.glb"
+        scale="1 1 1"
+        position="50 150 0"
+        rotation="-90 0 0"
+      >
+      </a-entity>
+    </a-nft>
+
+    <!-- caméra qui suit les mouvements de l'appareil -->
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <script>
+    // masque le loader quand la scène est prête
+    document.querySelector('a-scene').addEventListener('loaded', function () {
+      var loader = document.querySelector('.arjs-loader');
+      if (loader) loader.style.display = 'none';
+    });
+  </script>
+</body>
+</html>
