@@ -78,16 +78,13 @@
   >
 
     <a-assets>
-      <video
-        id="vid"
-        src="assets/animation.mp4"
-        preload="auto"
-        loop
-        muted
-        playsinline
-        webkit-playsinline
-        crossorigin="anonymous"
-      ></video>
+      <!-- les 6 images du GIF "Animation de la fresque LIBERTÀ" (A-Frame ne sait pas animer un GIF) -->
+      <img id="f0" src="assets/gif/frame0.jpg" crossorigin="anonymous">
+      <img id="f1" src="assets/gif/frame1.jpg" crossorigin="anonymous">
+      <img id="f2" src="assets/gif/frame2.jpg" crossorigin="anonymous">
+      <img id="f3" src="assets/gif/frame3.jpg" crossorigin="anonymous">
+      <img id="f4" src="assets/gif/frame4.jpg" crossorigin="anonymous">
+      <img id="f5" src="assets/gif/frame5.jpg" crossorigin="anonymous">
     </a-assets>
 
     <!-- l'image qui sert de déclencheur : descripteurs assets/a.iset, a.fset, a.fset3 -->
@@ -100,16 +97,17 @@
       smoothTolerance=".01"
       smoothThreshold="5"
     >
-      <!-- le GIF (converti en vidéo) est posé à plat, centré sur l'image scannée -->
+      <!-- le GIF est posé à plat, centré sur l'image scannée -->
       <!-- position/taille de départ ; elles sont recalculées avec la vraie taille de l'image dès qu'elle est chargée -->
       <a-entity id="content" position="361.2 270.9 0">
-        <a-video
+        <a-image
           id="clip"
-          src="#vid"
+          src="#f0"
           width="361.2"
-          height="361.2"
+          height="358.9"
           position="0 0 3"
-        ></a-video>
+          material="shader: flat; side: double"
+        ></a-image>
       </a-entity>
     </a-nft>
 
@@ -164,7 +162,7 @@
     });
 
     // taille réelle de l'image scannée (en mm) -> on centre et on ajuste la vidéo
-    var VIDEO_RATIO = 508 / 504; // largeur / hauteur de la vidéo
+    var VIDEO_RATIO = 508 / 505; // largeur / hauteur du GIF
     window.addEventListener('arjs-nft-init-data', function (e) {
       var d = e.detail;                       // { dpi, width, height } (pixels)
       var wMM = d.width / d.dpi * 25.4;       // largeur de l'image scannée en unités AR.js (mm)
@@ -179,17 +177,30 @@
       log('image : ' + Math.round(wMM) + ' x ' + Math.round(hMM) + ' mm (dpi ' + d.dpi + ')');
     });
 
-    // l'image est reconnue / perdue : on lance / on met en pause la vidéo
-    var video = document.getElementById('vid');
+    // animation du GIF : on fait défiler les 6 images (180 ms chacune, comme le GIF d'origine)
+    var clipEl = document.getElementById('clip');
+    var NB_FRAMES = 6, FRAME_MS = 180, frame = 0, gifTimer = null;
+    function startGif() {
+      if (gifTimer) return;
+      gifTimer = setInterval(function () {
+        frame = (frame + 1) % NB_FRAMES;
+        clipEl.setAttribute('material', 'src', '#f' + frame);
+      }, FRAME_MS);
+    }
+    function stopGif() {
+      clearInterval(gifTimer);
+      gifTimer = null;
+    }
+
+    // l'image est reconnue / perdue : on lance / on arrête le GIF
     marker.addEventListener('markerFound', function () {
       if (loader) loader.style.display = 'none';
       statusEl.textContent = "Image détectée ✓";
-      var p = video.play();
-      if (p && p.catch) p.catch(function (err) { log('video: ' + err); });
+      startGif();
     });
     marker.addEventListener('markerLost', function () {
       statusEl.textContent = "Pointe la caméra vers la photo";
-      video.pause();
+      stopGif();
     });
   </script>
 </body>
