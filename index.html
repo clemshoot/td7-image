@@ -9,6 +9,68 @@
 <script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@1c2407b26c61958baa93967b5412487cd94b290b/dist/aframe-master.min.js"></script>
 <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
 
+<script>
+  // Anti-tremblement : l'entité suit la position de l'image détectée avec un filtre.
+  // - petits mouvements (bruit du tracking) -> suivi très lent, le GIF reste quasi immobile
+  // - grands mouvements (on bouge vraiment le téléphone) -> suivi rapide
+  // - si l'image est perdue un court instant, le GIF reste affiché au lieu de clignoter
+  AFRAME.registerComponent('smooth-follow', {
+    schema: {
+      target: { type: 'selector' },
+      minAlpha: { default: 0.03 },  // vitesse de suivi quand ça tremble juste un peu
+      maxAlpha: { default: 0.5 },   // vitesse de suivi pour un vrai déplacement
+      posRange: { default: 40 },    // mm : au-delà, on considère que c'est un vrai déplacement
+      rotRange: { default: 0.15 },  // radians (~9°) : idem pour la rotation
+      lostDelay: { default: 600 }   // ms pendant lesquels on garde le GIF après une perte
+    },
+    init: function () {
+      this.tPos = new THREE.Vector3();
+      this.tQuat = new THREE.Quaternion();
+      this.tScale = new THREE.Vector3();
+      this.hasPose = false;
+      this.lastSeen = 0;
+      this.el.object3D.visible = false;
+    },
+    tick: function (time) {
+      var target = this.data.target;
+      if (!target) return;
+      var o = this.el.object3D;
+      var m = target.object3D;
+
+      if (!m.visible) {
+        // image perdue : on garde le GIF un petit moment, puis on le cache
+        if (time - this.lastSeen > this.data.lostDelay) {
+          o.visible = false;
+          this.hasPose = false;
+        }
+        return;
+      }
+
+      this.lastSeen = time;
+      m.updateMatrixWorld(true);
+      m.matrixWorld.decompose(this.tPos, this.tQuat, this.tScale);
+
+      if (!this.hasPose) {
+        // première détection : on se place directement sur l'image
+        o.position.copy(this.tPos);
+        o.quaternion.copy(this.tQuat);
+        o.scale.copy(this.tScale);
+        this.hasPose = true;
+      } else {
+        var d = this.data;
+        // plus l'écart est grand, plus on suit vite (filtre adaptatif)
+        var aPos = THREE.MathUtils.clamp(o.position.distanceTo(this.tPos) / d.posRange, 0, 1);
+        var aRot = THREE.MathUtils.clamp(o.quaternion.angleTo(this.tQuat) / d.rotRange, 0, 1);
+        var alpha = d.minAlpha + (d.maxAlpha - d.minAlpha) * Math.max(aPos, aRot) * Math.max(aPos, aRot);
+        o.position.lerp(this.tPos, alpha);
+        o.quaternion.slerp(this.tQuat, alpha);
+        o.scale.lerp(this.tScale, alpha);
+      }
+      o.visible = true;
+    }
+  });
+</script>
+
 <style>
   .arjs-loader {
     height: 100%;
@@ -93,10 +155,13 @@
       type="nft"
       url="https://clemshoot.github.io/td7-image/assets/a"
       smooth="true"
-      smoothCount="25"
-      smoothTolerance=".05"
-      smoothThreshold="8"
-    >
+      smoothCount="10"
+      smoothTolerance=".01"
+      smoothThreshold="5"
+    ></a-nft>
+
+    <!-- le GIF n'est pas accroché directement à l'image : il la suit en douceur (anti-tremblement) -->
+    <a-entity id="anchor" smooth-follow="target: #marker">
       <!-- le GIF est posé à plat, centré sur l'image scannée -->
       <!-- position/taille de départ ; elles sont recalculées avec la vraie taille de l'image dès qu'elle est chargée -->
       <!-- repère AR.js NFT : origine = coin bas-gauche de l'image, X vers la droite, -Z vers le haut de l'image, Y sort de l'image -->
@@ -111,7 +176,7 @@
           material="shader: flat; side: double"
         ></a-image>
       </a-entity>
-    </a-nft>
+    </a-entity>
 
     <a-entity camera></a-entity>
   </a-scene>
