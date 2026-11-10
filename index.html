@@ -78,13 +78,16 @@
   >
 
     <a-assets>
-      <!-- les 6 images du GIF "Animation de la fresque LIBERTÀ" (A-Frame ne sait pas animer un GIF) -->
+      <!-- les 9 images du GIF assets/animation.gif (A-Frame ne sait pas animer un GIF) -->
       <img id="f0" src="assets/gif/frame0.jpg" crossorigin="anonymous">
       <img id="f1" src="assets/gif/frame1.jpg" crossorigin="anonymous">
       <img id="f2" src="assets/gif/frame2.jpg" crossorigin="anonymous">
       <img id="f3" src="assets/gif/frame3.jpg" crossorigin="anonymous">
       <img id="f4" src="assets/gif/frame4.jpg" crossorigin="anonymous">
       <img id="f5" src="assets/gif/frame5.jpg" crossorigin="anonymous">
+      <img id="f6" src="assets/gif/frame6.jpg" crossorigin="anonymous">
+      <img id="f7" src="assets/gif/frame7.jpg" crossorigin="anonymous">
+      <img id="f8" src="assets/gif/frame8.jpg" crossorigin="anonymous">
     </a-assets>
 
     <!-- l'image qui sert de déclencheur : descripteurs assets/a.iset, a.fset, a.fset3 -->
@@ -105,7 +108,7 @@
           id="clip"
           src="#f0"
           width="361.2"
-          height="358.9"
+          height="236"
           position="0 1 0"
           rotation="-90 0 0"
           material="shader: flat; side: double"
@@ -164,7 +167,7 @@
     });
 
     // taille réelle de l'image scannée (en mm) -> on centre et on ajuste la vidéo
-    var VIDEO_RATIO = 508 / 505; // largeur / hauteur du GIF
+    var VIDEO_RATIO = 508 / 332; // largeur / hauteur du GIF
     window.addEventListener('arjs-nft-init-data', function (e) {
       var d = e.detail;                       // { dpi, width, height } (pixels)
       var wMM = d.width / d.dpi * 25.4;       // largeur de l'image scannée en unités AR.js (mm)
@@ -179,9 +182,9 @@
       log('image : ' + Math.round(wMM) + ' x ' + Math.round(hMM) + ' mm (dpi ' + d.dpi + ')');
     });
 
-    // animation du GIF : on fait défiler les 6 images (180 ms chacune, comme le GIF d'origine)
+    // animation du GIF : on fait défiler les 9 images (160 ms chacune, comme le GIF d'origine)
     var clipEl = document.getElementById('clip');
-    var NB_FRAMES = 6, FRAME_MS = 180, frame = 0, gifTimer = null;
+    var NB_FRAMES = 9, FRAME_MS = 160, frame = 0, gifTimer = null;
     function startGif() {
       if (gifTimer) return;
       gifTimer = setInterval(function () {
