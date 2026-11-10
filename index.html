@@ -99,13 +99,15 @@
     >
       <!-- le GIF est posé à plat, centré sur l'image scannée -->
       <!-- position/taille de départ ; elles sont recalculées avec la vraie taille de l'image dès qu'elle est chargée -->
-      <a-entity id="content" position="361.2 270.9 0">
+      <!-- repère AR.js NFT : origine = coin bas-gauche de l'image, X vers la droite, -Z vers le haut de l'image, Y sort de l'image -->
+      <a-entity id="content" position="361.2 0 -270.9">
         <a-image
           id="clip"
           src="#f0"
           width="361.2"
           height="358.9"
-          position="0 0 3"
+          position="0 1 0"
+          rotation="-90 0 0"
           material="shader: flat; side: double"
         ></a-image>
       </a-entity>
@@ -170,7 +172,7 @@
       // la vidéo tient entièrement dans l'image (sans déformation)
       var vw = wMM, vh = wMM / VIDEO_RATIO;
       if (vh > hMM) { vh = hMM; vw = hMM * VIDEO_RATIO; }
-      document.getElementById('content').setAttribute('position', (wMM / 2) + ' ' + (hMM / 2) + ' 0');
+      document.getElementById('content').setAttribute('position', (wMM / 2) + ' 0 ' + (-hMM / 2));
       var clip = document.getElementById('clip');
       clip.setAttribute('width', vw);
       clip.setAttribute('height', vh);
